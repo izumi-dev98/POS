@@ -17,4 +17,8 @@
     <ProjectReference Include="..\POS.SHARED\POS.SHARED.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Menu\Command\" />
+  </ItemGroup>
+
 </Project>
