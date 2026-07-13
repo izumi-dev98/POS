@@ -16,5 +16,6 @@ namespace POS.DOMAIN.Features.MenuCategory
         Task<Result<MenuCagResponse>> DeleteMenuCag(int id);
 
         Task<Result<MenuCagResponse>> UpdateMenuCag(MenuCagRequest request);
+        Task<Result<MenuCagResponse>> PatchMenuCag(int id, MenuCagRequest request);
     }
 }

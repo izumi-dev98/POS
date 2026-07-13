@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace POS.DOMAIN.Features.MenuCategory.Command
 {
-    public class UpdateMenuCagCommand : IRequest<Result<MenuCagResponse>>
+    public class PatchMenuCagCommand : IRequest<Result<MenuCagResponse>>
     {
         public int id { get; set; }
 

@@ -76,5 +76,25 @@ namespace POS.API.Controllers
 
             return Ok(result);
         }
+
+        [HttpPatch("{id}")]
+
+        public async Task<IActionResult> Patch([FromRoute] int id , [FromBody] MenuCagRequest menuCag)
+        {
+            var command = new PatchMenuCagCommand
+            {
+                id = id,
+                MenuCag_Name = menuCag.MenuCag_Name,
+                MenuCag_Des = menuCag.MenuCag_Des
+            };
+
+            var result = await Mediator.Send(command);
+            if (!result.IsSuccess)
+            {
+                return NotFound(result);
+            }
+
+            return Ok(result);
+        }
     }
 }

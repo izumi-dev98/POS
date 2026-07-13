@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using POS.DATABASE;
 using POS.DOMAIN.Features.MenuCategory.Models;
+using POS.DOMAIN.Features.MenuCategory.SQLQuery;
 using POS.SHARED;
 using System;
 using System.Collections.Generic;
@@ -35,16 +36,9 @@ namespace POS.DOMAIN.Features.MenuCategory
 
                 using (IDbConnection conn = _db.CreateConnection())
                 {
-                    string query = @"SELECT [Id]
-                                                          ,[MenuCag_Name]
-                                                          ,[MenuCag_Des]
-                                                          ,[IsDelete]
-                                                          ,[CreatedAt]
-                                                          ,[DeletedAt]
-                                                          ,[UpdatedAt]
-                                                           FROM [dbo].[MenuCategories] WHERE IsDelete = 0";
+               
 
-                    var result = await conn.QueryAsync<MenuCagResponse>(query);
+                    var result = await conn.QueryAsync<MenuCagResponse>(SQLMenuCagQuery.GetAllMenuCag);
 
                     return Result<IEnumerable<MenuCagResponse>>.Success(result, "Data Found");
                 }
@@ -65,16 +59,9 @@ namespace POS.DOMAIN.Features.MenuCategory
 
                 using (IDbConnection conn = _db.CreateConnection())
                 {
-                    string searchQuery = @"SELECT [Id]
-                                                          ,[MenuCag_Name]
-                                                     
-                                                          ,[IsDelete]
-                                                    
-                                                           FROM [dbo].[MenuCategories]
+                   
 
-                                                           WHERE UPPER(MenuCag_Name) = UPPER(@MenuCag_Name) Collate latin1_General_CI_AS ";
-
-                    var sr = await conn.QueryFirstOrDefaultAsync<MenuCagResponse>(searchQuery, request);
+                    var sr = await conn.QueryFirstOrDefaultAsync<MenuCagResponse>(SQLMenuCagQuery.GetByMenuCagName, request);
 
                     if (sr != null)
                     {
@@ -82,14 +69,7 @@ namespace POS.DOMAIN.Features.MenuCategory
 
 
 
-                            string restoreQuery = @"
-                                          UPDATE MenuCategories
-                                           SET
-                                                  IsDelete = 0,
-                                                  UpdatedAt = GETDATE()
-                                          WHERE id = @id";
-
-                            await conn.ExecuteAsync(restoreQuery, new
+                            await conn.ExecuteAsync(SQLMenuCagQuery.restoreQuery, new
                             {
                                 sr.id
 
@@ -102,15 +82,9 @@ namespace POS.DOMAIN.Features.MenuCategory
                         return Result<MenuCagResponse>.Failure("Menu Category is Already Exit", "Duplicate Category");
                     }
 
-                    string createQuery = @"INSERT INTO [dbo].[MenuCategories]
-                                             ([MenuCag_Name]
-                                              ,[MenuCag_Des])
-                                          VALUES
-                                           (@MenuCag_Name
-                                           ,@MenuCag_Des
-                                            )";
+                   
 
-                    await conn.ExecuteAsync(createQuery, request);
+                    await conn.ExecuteAsync(SQLMenuCagQuery.createMenuCagQuery, request);
 
                     return Result<MenuCagResponse>.Success(null, "New Menu Category Create is successfully");
 
@@ -134,13 +108,9 @@ namespace POS.DOMAIN.Features.MenuCategory
 
                 using (IDbConnection conn = _db.CreateConnection())
                 {
-                    string query = @"UPDATE [dbo].[MenuCategories] 
-                 SET [IsDelete] = 1, 
-                     [DeletedAt] = GETDATE() 
-                 WHERE id = @id";
-
+                   
                  
-                    int affectedRows = await conn.ExecuteAsync(query, new { id });
+                    int affectedRows = await conn.ExecuteAsync(SQLMenuCagQuery.deleteMenucCagQuery, new { id });
 
                     if (affectedRows == 0)
                     {
@@ -167,15 +137,10 @@ namespace POS.DOMAIN.Features.MenuCategory
 
                 using (IDbConnection conn = _db.CreateConnection())
                 {
-                    string query = @"
-                       UPDATE [dbo].[MenuCategories] 
-                                     SET [MenuCag_Name] = @MenuCag_Name,
-                                      [MenuCag_Des] = @MenuCag_Des,
-                                         [UpdatedAt] = GETDATE()
-                                           WHERE id = @id";
+                    
 
 
-                    int result = await conn.ExecuteAsync(query, request);
+                    int result = await conn.ExecuteAsync(SQLMenuCagQuery.UpdateMenuCagQuery, request);
 
                     if (result == 0)
                     {
@@ -185,6 +150,57 @@ namespace POS.DOMAIN.Features.MenuCategory
                     return Result<MenuCagResponse>.Success(null, "Menu Category Update successfully.");
                 }
 
+
+            }
+            catch (Exception ex)
+            {
+
+                return Result<MenuCagResponse>.Failure($"  {ex.Message} ", "An error occurred");
+            }
+        }
+
+        public async Task<Result<MenuCagResponse>> PatchMenuCag(int id, MenuCagRequest request)
+        {
+            try
+            {
+
+              using(IDbConnection conn = _db.CreateConnection())
+                {
+                    var updateFields = new List<string>();
+                    var para = new DynamicParameters();
+
+                    para.Add("id", id);
+
+                    if(request.MenuCag_Name is not null)
+                    {
+                        updateFields.Add("MenuCag_Name = @MenuCag_Name");
+                        para.Add("MenuCag_Name", request.MenuCag_Name);
+                    }
+
+                    if(request.MenuCag_Des is not null)
+                    {
+                        updateFields.Add("MenuCag_Des = @MenuCag_Des");
+                        para.Add("MenuCag_Des", request.MenuCag_Des);
+                    }
+
+                 
+                    if (updateFields.Count == 0)
+                        return Result<MenuCagResponse>.Failure("No fields provided to update.", "Bad Request");
+
+                    updateFields.Add("UpdatedAt = GETDATE()");
+
+                    string fullsql = SQLMenuCagQuery.PatchBase + string.Join(",", updateFields) + SQLMenuCagQuery.PatchFooter;
+
+                    int result = await conn.ExecuteAsync(fullsql, para);
+
+                    if(result > 0)
+                    {
+                        return Result<MenuCagResponse>.Success(null, "Update Is Success");
+                    } else
+                    {
+                        return Result<MenuCagResponse>.Failure( "Update Is Fail" ,"An Error occured");
+                    }
+                }
 
             }
             catch (Exception ex)
