@@ -11,5 +11,7 @@ namespace POS.DOMAIN.Features.Menu
     public interface  IMenu
     {
         Task<Result<IEnumerable<MenuResponse>>> GetAllMenu();
+
+        Task<Result<MenuResponse>> CreateMenu(MenuRequest request);
     }
 }

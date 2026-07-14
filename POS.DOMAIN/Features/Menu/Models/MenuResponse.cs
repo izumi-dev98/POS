@@ -27,6 +27,10 @@ namespace POS.DOMAIN.Features.Menu.Models
         public string MenuCag_Name { get; set; } 
         public string StatusText { get; set; }
 
+        public int ? Status { get; set; }
+
+        public int ? IsDelete { get; set; }
+
 
 
 
